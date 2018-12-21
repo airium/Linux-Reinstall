@@ -18,4 +18,5 @@ Note:
 2. RAID1 is used for `/boot` and RAID0 is used for `/`.
 3. SWAP is disabled. You can enable it by `swapon`.
 
-**The dd functionality to install Windows is temporarily not working.**
+**The dd functionality to install Windows is temporarily not working.** \
+**Installing Debian 8 on ikoula machines will fail.**
