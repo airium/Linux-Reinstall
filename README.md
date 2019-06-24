@@ -1,22 +1,28 @@
 # Linux-Reinstall
 
-This repo includes modified script from moeclub.org, with credit to Vicer.
+This repo includes modified scripts from <https://moeclub.org>, with credit to Vicer.
 
-## `install.sh`
+## template-YYMMDD.sh
 
-The original script from Vicer.
+The original scripts. See <https://moeclub.org/2018/04/03/603/> for detailed usage.
 
-Please refer to <https://moeclub.org/2018/04/03/603> for detailed usage.
+## install.sh
 
-## `install-raid0.sh`
+The modified script, mainly differing in:
 
-Modified script to configure raid0 on a dual disk machine.
+1. use `en_US.UTF-8` instead of `en_US` for debian/ubuntu.
+2. use `ifupdown` instead of `netplan` for newer ubuntu releases.
+3. use UEFI/GPT instead, for single partition of 2TB or larger.
+4. use boot-root-noswap partition style instead of built-in atomic.
 
-Note:
+## install-raid0.sh
+
+Same flavor as `install.sh`, but offer to install software RAID-0.
+
+Currently:
 
 1. The machine must have `/dev/sda` and `/dev/sdb` of **identical** size.
 2. RAID1 is used for `/boot` and RAID0 is used for `/`.
 3. SWAP is disabled. You can enable it by `swapon`.
 
-**The dd functionality to install Windows is temporarily not working.** \
-**Installing Debian 8 on ikoula machines will fail.**
+   **Installing Debian 8 on ikoula machines will fail.**
