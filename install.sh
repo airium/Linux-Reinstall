@@ -626,43 +626,10 @@ for ListCOMP in `echo -en 'gzip\nlzma\nxz'`
 
 $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
 
+echo $MirrorHost
+
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 cat >/tmp/boot/preseed.cfg<<EOF
-d-i debian-installer/locale string en_US
-d-i console-setup/layoutcode string us
-
-d-i keyboard-configuration/xkb-keymap string us
-
-d-i netcfg/choose_interface select $IFETH
-
-d-i netcfg/disable_autoconfig boolean true
-d-i netcfg/dhcp_failed note
-d-i netcfg/dhcp_options select Configure network manually
-d-i netcfg/get_ipaddress string $IPv4
-d-i netcfg/get_netmask string $MASK
-d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string 8.8.8.8
-d-i netcfg/no_default_route boolean true
-d-i netcfg/confirm_static boolean true
-
-d-i hw-detect/load_firmware boolean true
-
-d-i mirror/country string manual
-d-i mirror/http/hostname string $MirrorHost
-d-i mirror/http/directory string $MirrorFolder
-d-i mirror/http/proxy string
-d-i apt-setup/services-select multiselect
-
-d-i passwd/root-login boolean ture
-d-i passwd/make-user boolean false
-d-i passwd/root-password-crypted password $myPASSWORD
-d-i user-setup/allow-password-weak boolean true
-d-i user-setup/encrypt-home boolean false
-
-d-i clock-setup/utc boolean true
-d-i time/zone string US/Eastern
-d-i clock-setup/ntp boolean true
-
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb fuse-modules-${vKernel_udeb}-amd64-di
 d-i partman/early_command string \
 debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
@@ -675,24 +642,77 @@ cp -f '/net.bat' './net.bat'; \
 debconf-set grub-installer/bootdev string "\$(list-devices disk |head -n1)"; \
 umount /media || true; \
 
-d-i partman/mount_style select uuid
-d-i partman-auto/init_automatically_partition select Guided - use entire disk
-d-i partman-auto/method string regular
-d-i partman-lvm/device_remove_lvm boolean true
+d-i debian-installer/locale select en_US.UTF-8
+d-i keyboard-configuration/xkb-keymap select us
+
+d-i netcfg/enable boolean true
+d-i netcfg/use_autoconfig boolean false
+d-i netcfg/disable_autoconfig boolean true
+d-i netcfg/do_not_use_netplan boolean true
+d-i netcfg/target_network_config select ifupdown
+d-i netcfg/choose_interface select $IFETH
+d-i netcfg/no_default_route boolean true
+d-i netcfg/dhcp_failed note
+d-i netcfg/dhcp_options select Configure network manually
+d-i netcfg/get_ipaddress string $IPv4
+d-i netcfg/get_netmask string $MASK
+d-i netcfg/get_gateway string $GATE
+d-i netcfg/get_nameservers string 1.1.1.1
+d-i netcfg/confirm_static boolean true
+
+d-i mirror/country string manual
+d-i mirror/protocol select http
+d-i mirror/http/proxy string
+d-i mirror/http/countries select manual
+d-i mirror/http/hostname string $MirrorHost
+d-i mirror/http/directory string $MirrorFolder
+d-i mirror/udeb/components multiselect main, restricted, universe, multiverse
+
+d-i passwd/root-login boolean true
+d-i passwd/make-user boolean false
+d-i passwd/root-password-crypted password $myPASSWORD
+d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+
+d-i clock-setup/utc boolean true
+d-i clock-setup/ntp boolean true
+d-i time/zone string Asia/Shanghai
+
+d-i partman-md/confirm boolean true
 d-i partman-md/device_remove_md boolean true
-d-i partman-auto/choose_recipe select atomic
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/choose_partition select finish
+d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-lvm/confirm boolean true
+d-i partman-lvm/device_remove_lvm boolean true
 d-i partman-lvm/confirm_nooverwrite boolean true
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/alignment string cylinder
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
+d-i partman/mount_style select uuid
+d-i partman/choose_partition select finish
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select gpt-boot-root
+d-i partman-auto/expert_recipe string gpt-boot-root ::                              \
+        1   1   1  free \$bios_boot{ } method{ biosgrub }                         . \
+      200 200 200 fat32 \$primary{ }               method{ efi }    format{ }     . \
+      300 300 300  ext3 \$primary{ } \$bootable{ } method{ format } format{ }       \
+                        use_filesystem{ } filesystem{ ext3 } mountpoint{ /boot }  . \
+      999 999  -1  ext4 \$primary{ }               method{ format } format{ }       \
+                        use_filesystem{ } filesystem{ ext4 } mountpoint{ / }      .
+d-i partman-swapfile/percentage string 0
+d-i partman-swapfile/size string 0
 
 d-i debian-installer/allow_unauthenticated boolean true
-
 tasksel tasksel/first multiselect minimal
 d-i pkgsel/update-policy select none
-d-i pkgsel/include string openssh-server
+d-i pkgsel/include string openssh-server ifupdown net-tools
 d-i pkgsel/upgrade select none
 
 popularity-contest popularity-contest/participate boolean false
@@ -701,9 +721,11 @@ d-i grub-installer/only_debian boolean true
 d-i grub-installer/bootdev string default
 d-i finish-install/reboot_in_progress note
 d-i debian-installer/exit/reboot boolean true
+
 d-i preseed/late_command string	\
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config;
+
 EOF
 
 [[ "$loaderMode" != "0" ]] && AutoNet='1'
